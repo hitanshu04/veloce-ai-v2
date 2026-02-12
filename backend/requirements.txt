@@ -6,7 +6,7 @@ requests
 tiktoken
 pip-system-certs
 
-pytubefix
+yt-dlp
 
 groq
 httpx
