@@ -1,43 +1,36 @@
 import os
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from pinecone import Pinecone, ServerlessSpec
 from dotenv import load_dotenv
 
 load_dotenv()
 
-os.environ['HF_HOME'] = r'D:\python_projects\veloce-ai\backend\model_cache'
+# 👇 LIGHTWEIGHT GOOGLE EMBEDDINGS (No RAM usage on server)
+embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
 
-def index_transcript(job_id: str, text: str, video_metadata: dict):
-    """
-    Ensures every single chunk has a string-based job_id for 100% retrieval accuracy.
-    """
-    print(f"🧠 Indexing for Job: {job_id}")
+def index_video_content(job_id: str, text: str):
+    print(f"🔹 Indexing Start for Job: {job_id}")
 
-    # 1. Precise Chunking
+    # 1. Chunking
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=800, chunk_overlap=100)
+        chunk_size=1000, chunk_overlap=100)
     chunks = text_splitter.split_text(text)
 
-    # 👇 CRITICAL: Force job_id to string and replicate for ALL chunks
-    job_id_str = str(job_id)
-    metadatas = [{
-        "job_id": job_id_str,
-        "title": str(video_metadata.get('title', '')),
-        "video_id": str(video_metadata.get('video_id', ''))
-    } for _ in chunks]
+    print(f"🔸 Split into {len(chunks)} chunks")
 
-    embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2",
-        model_kwargs={'device': 'cpu'}
-    )
-
-    # 2. Upsert with explicit metadata mapping
-    PineconeVectorStore.from_texts(
-        texts=chunks,
-        embedding=embeddings,
-        metadatas=metadatas,
-        index_name=os.getenv("PINECONE_INDEX_NAME")
-    )
-    print(f"✅ Data indexed and searchable for Job: {job_id_str}")
+    # 2. Store in Pinecone (using Google Embeddings)
+    try:
+        PineconeVectorStore.from_texts(
+            texts=chunks,
+            embedding=embeddings,
+            index_name=os.getenv("PINECONE_INDEX_NAME"),
+            namespace=job_id  # Using Job ID as namespace for isolation
+        )
+        print("✅ Indexing Success!")
+        return True
+    except Exception as e:
+        print(f"❌ Indexing Failed: {e}")
+        raise e
