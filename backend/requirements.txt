@@ -1,13 +1,12 @@
 fastapi==0.109.2
 uvicorn==0.27.1
-yt-dlp>=2024.03.10
 groq==0.9.0
 langchain-core==0.2.43
 langchain-community==0.2.19
 langchain-groq==0.1.10
 langchain-pinecone==0.1.3
 langchain-text-splitters==0.2.4
-langchain-google-genai  # 👈 New Player (Google Embeddings)
+langchain-google-genai
 pinecone-client==5.0.1
 python-dotenv==1.0.1
 pydantic==2.6.1
