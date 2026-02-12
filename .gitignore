@@ -1,0 +1,17 @@
+# System & Environment
+venv/
+.env
+__pycache__/
+*.pyc
+
+# Backend specific
+backend/model_cache/
+temp_audio/
+
+# Frontend (Double safety, waise frontend wala sambhal lega)
+frontend/node_modules/
+frontend/.next/
+
+# OS junk
+.DS_Store
+Thumbs.db
