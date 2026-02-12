@@ -12,13 +12,13 @@ if not os.path.exists("temp_audio"):
 
 
 def download_audio(url: str):
-    print(f"⬇️ Downloading Smart Audio (Auto-Format): {url}")
+    print(f"⬇️ Downloading Audio (Format 18 - Bulletproof): {url}")
 
     ydl_opts = {
-        # 👇 CHANGE: Sirf 'worst' likha hai.
-        # Matlab: "Sabse chhota file do, chahe wo MP4 ho ya WEBM".
-        # Ye Render par 100% chalega bina FFmpeg ke.
-        'format': 'worst',
+        # 👇 THE FINAL FIX:
+        # '18' = Standard MP4 360p (Audio+Video in one file).
+        # '/best' = Agar 18 na mile (jo namumkin hai), toh jo best single file hai wo dedo.
+        'format': '18/best',
         'outtmpl': 'temp_audio/%(id)s.%(ext)s',
         'quiet': True,
         'no_warnings': True,
@@ -39,11 +39,10 @@ def download_audio(url: str):
 
 
 def transcribe_audio(file_path: str):
-    print(f"🚀 Transcribing File: {file_path}")
+    print(f"🚀 Transcribing: {file_path}")
 
     try:
         with open(file_path, "rb") as file:
-            # Groq apne aap extension detect kar lega (mp4/webm/m4a)
             transcription = client.audio.transcriptions.create(
                 file=(os.path.basename(file_path), file.read()),
                 model="whisper-large-v3",
@@ -59,4 +58,3 @@ def transcribe_audio(file_path: str):
     finally:
         if os.path.exists(file_path):
             os.remove(file_path)
-            print("🗑️ Cleanup Done")
