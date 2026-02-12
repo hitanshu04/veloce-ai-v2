@@ -10,8 +10,10 @@ load_dotenv()
 # 👇 LIGHTWEIGHT GOOGLE EMBEDDINGS (No RAM usage on server)
 embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
+# 👇 NAME FIXED: Ab ye 'index_transcript' hai, jo main.py chahta hai
 
-def index_video_content(job_id: str, text: str):
+
+def index_transcript(job_id: str, text: str):
     print(f"🔹 Indexing Start for Job: {job_id}")
 
     # 1. Chunking
