@@ -15,12 +15,13 @@ def download_audio(url: str):
     print(f"⬇️ Downloading Audio with Cookies: {url}")
 
     ydl_opts = {
-        'format': 'bestaudio/best',
+        # 👇 FIX: 'bestaudio/best' hata diya. Simple 'bestaudio' rakha.
+        # Ye fail nahi hoga kyunki ye jo bhi audio milega utha lega.
+        'format': 'bestaudio',
         'outtmpl': 'temp_audio/%(id)s.%(ext)s',
         'quiet': True,
         'no_warnings': True,
         'nocheckcertificate': True,
-        # 👇 YE HAI SOLUTION: Cookies file ka path
         'cookiefile': 'cookies.txt',
     }
 
@@ -33,8 +34,8 @@ def download_audio(url: str):
             return filename, info.get('title', 'Unknown Video')
     except Exception as e:
         print(f"❌ Download Error: {e}")
-        # Error aane par user ko clear message dikhega
-        raise Exception(f"YouTube Blocked Bot: {str(e)}")
+        # Error message thoda saaf dikhate hain
+        raise Exception(f"YouTube Error: {str(e)}")
 
 
 def transcribe_audio(file_path: str):
