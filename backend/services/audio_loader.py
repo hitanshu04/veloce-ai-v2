@@ -12,12 +12,13 @@ if not os.path.exists("temp_audio"):
 
 
 def download_audio(url: str):
-    print(f"⬇️ Downloading Audio with Cookies: {url}")
+    print(f"⬇️ Downloading Smart Video (Low Quality for Speed): {url}")
 
     ydl_opts = {
-        # 👇 FIX: 'bestaudio/best' hata diya. Simple 'bestaudio' rakha.
-        # Ye fail nahi hoga kyunki ye jo bhi audio milega utha lega.
-        'format': 'bestaudio',
+        # 👇 MAGIC CHANGE: 'worst[ext=mp4]'
+        # Matlab: Sabse halki MP4 video do.
+        # Isme audio hota hai, size kam hota hai, aur FFmpeg nahi chahiye!
+        'format': 'worst[ext=mp4]/best[ext=mp4]',
         'outtmpl': 'temp_audio/%(id)s.%(ext)s',
         'quiet': True,
         'no_warnings': True,
@@ -34,15 +35,15 @@ def download_audio(url: str):
             return filename, info.get('title', 'Unknown Video')
     except Exception as e:
         print(f"❌ Download Error: {e}")
-        # Error message thoda saaf dikhate hain
         raise Exception(f"YouTube Error: {str(e)}")
 
 
 def transcribe_audio(file_path: str):
-    print(f"🚀 Transcribing: {file_path}")
+    print(f"🚀 Transcribing File: {file_path}")
 
     try:
         with open(file_path, "rb") as file:
+            # Groq MP4 file ko bhi khushi-khushi transcribe kar deta hai
             transcription = client.audio.transcriptions.create(
                 file=(os.path.basename(file_path), file.read()),
                 model="whisper-large-v3",
@@ -54,7 +55,8 @@ def transcribe_audio(file_path: str):
 
     except Exception as e:
         print(f"❌ Groq API Error: {e}")
-        raise Exception("Transcription failed via Groq API.")
+        raise Exception(f"Groq API Failed: {str(e)}")
     finally:
         if os.path.exists(file_path):
             os.remove(file_path)
+            print("🗑️ Cleanup Done")
