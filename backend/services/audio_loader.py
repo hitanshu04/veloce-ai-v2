@@ -13,12 +13,15 @@ def download_audio(url: str):
         os.makedirs("temp_audio")
 
     ydl_opts = {
-        # 'best' maang rahe hain taaki 'format not available' error na aaye
-        'format': 'bestaudio[ext=m4a]/best[ext=mp4]/best',
+        # 'best' format le rahe hain taaki merging ka jhanjhat na ho
+        'format': 'best',
         'outtmpl': 'temp_audio/%(id)s.%(ext)s',
         'noplaylist': True,
-        'cookiefile': 'cookies.txt',  # 👈 Ye GitHub par honi zaroori hai!
-        'quiet': True
+        'cookiefile': 'cookies.txt',  # Ye file GitHub par honi chahiye!
+        'nocheckcertificate': True,
+        'quiet': True,
+        # 👇 MAGIC: Pretend to be an Android client to bypass bot checks
+        'extractor_args': {'youtube': {'player_client': ['android', 'web']}}
     }
 
     try:
@@ -27,8 +30,8 @@ def download_audio(url: str):
             filename = ydl.prepare_filename(info)
             return filename, info.get('title', 'Video')
     except Exception as e:
-        print(f"❌ YouTube Error: {e}")
-        raise Exception(f"YouTube Blocked: {str(e)}")
+        print(f"❌ YouTube Blocked: {e}")
+        raise Exception(f"YouTube Blocked Bot: {str(e)}")
 
 
 def transcribe_audio(file_path: str):

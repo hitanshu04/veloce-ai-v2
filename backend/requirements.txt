@@ -5,9 +5,9 @@ pydantic
 requests
 tiktoken
 pip-system-certs
-
+# Audio Downloader
 yt-dlp
-
+# AI & Database
 groq
 httpx
 langchain-core

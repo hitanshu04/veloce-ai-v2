@@ -21,7 +21,7 @@ llm = ChatGroq(
     temperature=0.3,
     model_name="llama-3.1-8b-instant",
     groq_api_key=os.getenv("GROQ_API_KEY"),
-    http_client=httpx.Client()  # 👈 Ye line us crash ko rokegi
+    http_client=httpx.Client()  # 👈 Explicitly pass a clean client
 )
 
 vectorstore = PineconeVectorStore(
