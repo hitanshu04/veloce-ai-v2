@@ -1,6 +1,6 @@
 import os
-import yt_dlp
 from groq import Groq
+from pytubefix import YouTube  # 👇 New Hero Library
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -12,30 +12,31 @@ if not os.path.exists("temp_audio"):
 
 
 def download_audio(url: str):
-    print(f"⬇️ Downloading Audio (Format 18 - Bulletproof): {url}")
-
-    ydl_opts = {
-        # 👇 THE FINAL FIX:
-        # '18' = Standard MP4 360p (Audio+Video in one file).
-        # '/best' = Agar 18 na mile (jo namumkin hai), toh jo best single file hai wo dedo.
-        'format': '18/best',
-        'outtmpl': 'temp_audio/%(id)s.%(ext)s',
-        'quiet': True,
-        'no_warnings': True,
-        'nocheckcertificate': True,
-        'cookiefile': 'cookies.txt',
-    }
+    print(f"⬇️ Downloading with Pytubefix: {url}")
 
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            video_id = info['id']
-            ext = info['ext']
-            filename = f"temp_audio/{video_id}.{ext}"
-            return filename, info.get('title', 'Unknown Video')
+        # Pytubefix automatically handles 'Sign in' & 'Bot' checks
+        yt = YouTube(url)
+
+        # 'get_lowest_resolution' hamesha single MP4 file deta hai (No FFmpeg needed)
+        # Ye sabse safe method hai Render free tier ke liye
+        stream = yt.streams.get_lowest_resolution()
+
+        # Download
+        filename = stream.download(output_path="temp_audio")
+
+        # Rename file to simple ID format (Optional but good for cleanliness)
+        new_filename = f"temp_audio/{yt.video_id}.mp4"
+        if os.path.exists(new_filename):
+            os.remove(new_filename)
+        os.rename(filename, new_filename)
+
+        return new_filename, yt.title
+
     except Exception as e:
         print(f"❌ Download Error: {e}")
-        raise Exception(f"YouTube Download Failed: {str(e)}")
+        # Error message saaf dikhega
+        raise Exception(f"Download Failed: {str(e)}")
 
 
 def transcribe_audio(file_path: str):
