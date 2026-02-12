@@ -12,21 +12,28 @@ if not os.path.exists("temp_audio"):
 
 
 def download_audio(url: str):
-    print(f"⬇️ Downloading Audio (No FFmpeg): {url}")
+    print(f"⬇️ Downloading Audio (Android Mode): {url}")
 
-    # 👇 CHANGES: FFmpeg hataya. Best raw audio download karenge (m4a/webm)
+    # 👇 MAGIC FIX: Pretend to be an Android App to bypass Bot Detection
     ydl_opts = {
         'format': 'bestaudio/best',
-        'outtmpl': 'temp_audio/%(id)s.%(ext)s',  # Extension dynamic hogi
+        'outtmpl': 'temp_audio/%(id)s.%(ext)s',
         'quiet': True,
         'no_warnings': True,
+        'nocheckcertificate': True,
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'web'],  # Android ban ke jayenge
+            }
+        }
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            # Info nikaalte waqt bhi android Client use hoga
             info = ydl.extract_info(url, download=True)
             video_id = info['id']
-            ext = info['ext']  # File extension pata lagao
+            ext = info['ext']
             filename = f"temp_audio/{video_id}.{ext}"
 
             return filename, info.get('title', 'Unknown Video')
