@@ -1,4 +1,5 @@
 import os
+import httpx  # 👈 Zaroori hai Compatibility ke liye
 from langchain_groq import ChatGroq
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
@@ -12,11 +13,15 @@ load_dotenv()
 # 👇 Consistent Embeddings (Must match vector_db.py)
 embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
+# 👇 PROXY FIX: Manual client define kar rahe hain taaki 'proxies' error na aaye
+custom_client = httpx.Client()
+
 # LLM (Brain)
 llm = ChatGroq(
     temperature=0.3,
     model_name="llama-3.1-8b-instant",
-    groq_api_key=os.getenv("GROQ_API_KEY")
+    groq_api_key=os.getenv("GROQ_API_KEY"),
+    http_client=custom_client  # 👈 Ye line us crash ko rokegi
 )
 
 vectorstore = PineconeVectorStore(
@@ -44,7 +49,13 @@ def get_chat_response(job_id: str, question: str):
     ANSWER:"""
 
     prompt = ChatPromptTemplate.from_template(template)
-    chain = ({"context": retriever, "question": RunnablePassthrough()}
-             | prompt | llm | StrOutputParser())
+
+    # Chain setup
+    chain = (
+        {"context": retriever, "question": RunnablePassthrough()}
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
 
     return chain.invoke(question).strip()

@@ -1,19 +1,19 @@
-fastapi
-uvicorn
-python-dotenv
-pydantic
-requests
-tiktoken
+fastapi==0.109.2
+uvicorn==0.27.1
+python-dotenv==1.0.1
+pydantic==2.6.1
+requests==2.32.3
+tiktoken==0.7.0
 pip-system-certs
 
-youtube-transcript-api
-yt-dlp
+pytubefix==6.3.1
 
-groq
-langchain-core
-langchain-community
-langchain-groq
-langchain-pinecone
-langchain-text-splitters
+groq==0.9.0
+httpx==0.27.0
+langchain-core==0.2.10
+langchain-community==0.2.5
+langchain-groq==0.1.6
+langchain-pinecone==0.1.1
+langchain-text-splitters==0.2.1
 langchain-google-genai
-pinecone-client
+pinecone-client==4.1.0
