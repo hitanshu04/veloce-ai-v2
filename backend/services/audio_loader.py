@@ -12,13 +12,13 @@ if not os.path.exists("temp_audio"):
 
 
 def download_audio(url: str):
-    print(f"⬇️ Downloading Smart Video (Low Quality for Speed): {url}")
+    print(f"⬇️ Downloading Smart Audio (Auto-Format): {url}")
 
     ydl_opts = {
-        # 👇 MAGIC CHANGE: 'worst[ext=mp4]'
-        # Matlab: Sabse halki MP4 video do.
-        # Isme audio hota hai, size kam hota hai, aur FFmpeg nahi chahiye!
-        'format': 'worst[ext=mp4]/best[ext=mp4]',
+        # 👇 CHANGE: Sirf 'worst' likha hai.
+        # Matlab: "Sabse chhota file do, chahe wo MP4 ho ya WEBM".
+        # Ye Render par 100% chalega bina FFmpeg ke.
+        'format': 'worst',
         'outtmpl': 'temp_audio/%(id)s.%(ext)s',
         'quiet': True,
         'no_warnings': True,
@@ -35,7 +35,7 @@ def download_audio(url: str):
             return filename, info.get('title', 'Unknown Video')
     except Exception as e:
         print(f"❌ Download Error: {e}")
-        raise Exception(f"YouTube Error: {str(e)}")
+        raise Exception(f"YouTube Download Failed: {str(e)}")
 
 
 def transcribe_audio(file_path: str):
@@ -43,7 +43,7 @@ def transcribe_audio(file_path: str):
 
     try:
         with open(file_path, "rb") as file:
-            # Groq MP4 file ko bhi khushi-khushi transcribe kar deta hai
+            # Groq apne aap extension detect kar lega (mp4/webm/m4a)
             transcription = client.audio.transcriptions.create(
                 file=(os.path.basename(file_path), file.read()),
                 model="whisper-large-v3",
@@ -55,7 +55,7 @@ def transcribe_audio(file_path: str):
 
     except Exception as e:
         print(f"❌ Groq API Error: {e}")
-        raise Exception(f"Groq API Failed: {str(e)}")
+        raise Exception("Transcription failed via Groq API.")
     finally:
         if os.path.exists(file_path):
             os.remove(file_path)
