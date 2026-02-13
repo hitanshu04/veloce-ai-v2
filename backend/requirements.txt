@@ -1,19 +1,32 @@
+# Core Backend Framework (Fast & Async)
 fastapi
 uvicorn
 python-dotenv
 pydantic
 requests
-tiktoken
-pip-system-certs
-# Audio Downloader
+
+# The "Hybrid" Ingestion Layer
+# Plan A: Instant Text (90% success)
+youtube-transcript-api
+# Plan B: Audio Download Fallback (10% edge cases)
 yt-dlp
-# AI & Database
+
+# AI & LLM Processing
 groq
+tiktoken
+# Fix for "ChatGroq" proxy crash (Critical)
 httpx
+
+# Orchestration & RAG Pipeline
 langchain-core
 langchain-community
 langchain-groq
-langchain-pinecone
 langchain-text-splitters
-langchain-google-genai
+
+# Vector Database & Embeddings
 pinecone-client
+langchain-pinecone
+langchain-google-genai
+
+# Security & Certs (For Render environment)
+pip-system-certs
