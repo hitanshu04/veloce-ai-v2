@@ -24,10 +24,9 @@ def download_audio(url: str):
     print(f"🔄 Processing Video: {url}")
     video_id = get_video_id(url)
 
-    # --- PLAN A: Try Fetching Direct Transcript (Fastest) ---
+    # --- PLAN A: Transcript (Fastest) ---
     try:
         print("⚡ Attempting Plan A: Direct Transcript Fetch...")
-        # Hindi, English (US/UK), aur Auto-generated sab try karega
         transcript = YouTubeTranscriptApi.get_transcript(
             video_id, languages=['hi', 'en', 'en-US', 'en-GB'])
 
@@ -42,44 +41,47 @@ def download_audio(url: str):
         return filename, "YouTube Video (Transcript)"
 
     except Exception as e:
-        print(f"⚠️ Plan A Failed ({e}). Switching to Plan B...")
+        print(f"⚠️ Plan A Failed (No Captions). Switching to Plan B...")
 
-    # --- PLAN B: Download Audio & Use AI (Fallback) ---
-    print("🐢 Attempting Plan B: Audio Download + Whisper AI...")
+    # --- PLAN B: Format 18 Download (Robust Fallback) ---
+    print("🐢 Attempting Plan B: Downloading Format 18 (No FFmpeg needed)...")
 
     try:
         ydl_opts = {
-            'format': 'bestaudio[ext=m4a]/best',  # M4A is fastest for Whisper
+            # 👇 MAGIC FIX: Format 18 = Pre-merged Audio/Video.
+            # FFmpeg ke bina yahi chalta hai Render par.
+            'format': '18',
             'outtmpl': 'temp_audio/%(id)s.%(ext)s',
-            'cookiefile': 'cookies.txt',  # Blocking bachane ke liye
+            'cookiefile': 'cookies.txt',
             'quiet': True,
+            'nocheckcertificate': True,
             'noplaylist': True
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             filename = ydl.prepare_filename(info)
+            print(f"✅ Plan B Successful! File: {filename}")
             return filename, info.get('title', 'Video')
 
     except Exception as e:
         print(f"❌ Plan B also Failed: {e}")
-        raise Exception(
-            "Failed to process video via both Transcript and Audio methods.")
+        # Agar ye bhi fail hua matlab YouTube ne IP block kar diya hai
+        raise Exception(f"Video process nahi ho paayi. Reason: {str(e)}")
 
 
 def transcribe_audio(file_path: str):
     print(f"🚀 Processing Content: {file_path}")
 
     try:
-        # Check 1: Agar file .txt hai (Plan A se aayi hai)
+        # Case 1: Text File (Plan A)
         if file_path.endswith(".txt"):
             with open(file_path, "r", encoding="utf-8") as f:
                 return f.read()
 
-        # Check 2: Agar file Audio hai (Plan B se aayi hai)
-        # Tab hum Groq Whisper use karenge
+        # Case 2: Video/Audio File (Plan B)
         with open(file_path, "rb") as file:
-            print("🎙️ Sending Audio to Groq Whisper...")
+            print("🎙️ Sending to Whisper...")
             transcription = client.audio.transcriptions.create(
                 file=(os.path.basename(file_path), file.read()),
                 model="whisper-large-v3",
@@ -88,7 +90,6 @@ def transcribe_audio(file_path: str):
             return transcription.text
 
     finally:
-        # Cleanup
         if os.path.exists(file_path):
             os.remove(file_path)
             print("🗑️ Cleanup Done")
