@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from services.audio_loader import download_audio, transcribe_audio
 from services.vector_db import index_transcript
-from services.chat_engine import get_chat_response
+from services.chat_engine import get_chat_response, get_video_summary
 
 app = FastAPI(title="Veloce-AI Backend")
 app.add_middleware(CORSMiddleware, allow_origins=[
@@ -31,26 +31,56 @@ async def process_video(request: VideoRequest, background_tasks: BackgroundTasks
 
     async def task():
         try:
-            video_data = await asyncio.to_thread(download_audio, request.url)
-            text = await asyncio.to_thread(transcribe_audio, video_data['audio_path'])
-            await asyncio.to_thread(index_transcript, job_id, text, video_data)
-            job_status_db[job_id] = {"status": "completed", "step": "✅ Ready"}
+            # 1. Download
+            job_status_db[job_id]["step"] = "📥 Downloading..."
+            file_path, title = await asyncio.to_thread(download_audio, request.url)
+
+            # 2. Transcribe
+            job_status_db[job_id]["step"] = "🎙️ Transcribing..."
+            text = await asyncio.to_thread(transcribe_audio, file_path)
+
+            # 🚨 CHECK: Stop if transcription failed
+            if "TRANSCRIPTION_ERROR" in text:
+                raise Exception(text.replace("TRANSCRIPTION_ERROR: ", ""))
+
+            # 3. Index (Ab yahan tabhi pahuchega jab text VALID ho)
+            job_status_db[job_id]["step"] = "🌲 Indexing to Vector DB..."
+            await asyncio.to_thread(index_transcript, job_id, text)
+
+            # 4. Summary
+            job_status_db[job_id]["step"] = "📝 Generating 3-Point Summary..."
+            summary = await asyncio.to_thread(get_video_summary, job_id)
+
+            job_status_db[job_id] = {
+                "status": "completed",
+                "step": "✅ Ready",
+                "summary": summary,
+                "title": title
+            }
         except Exception as e:
-            job_status_db[job_id] = {"status": "failed", "step": str(e)}
+            # Clean up on failure
+            print(f"❌ Task Error: {e}")
+            job_status_db[job_id] = {
+                "status": "failed", "step": f"Error: {str(e)}"}
 
     background_tasks.add_task(task)
     return {"job_id": job_id}
 
 
 @app.get("/status/{job_id}")
-async def get_status(job_id: str): return job_status_db.get(
-    job_id, {"status": "not_found"})
+async def get_status(job_id: str):
+    return job_status_db.get(job_id, {"status": "not_found"})
 
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
     try:
-        answer = await asyncio.to_thread(get_chat_response, request.job_id, request.question)
+        # ✅ Sequence sahi karo: Pehle QUESTION bhejona, fir JOB_ID
+        answer = await asyncio.to_thread(
+            get_chat_response,
+            request.question,  # <--- Sawaal pehle
+            request.job_id     # <--- ID baad mein
+        )
         return {"answer": answer}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

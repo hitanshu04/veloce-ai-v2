@@ -1,61 +1,65 @@
 import os
-import httpx  # 👈 Zaroori hai Compatibility ke liye
+from huggingface_hub import InferenceClient
 from langchain_groq import ChatGroq
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_pinecone import PineconeVectorStore
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
-from langchain_core.output_parsers import StrOutputParser
+from pinecone import Pinecone
 from dotenv import load_dotenv
 
 load_dotenv()
-
-# 👇 Consistent Embeddings (Must match vector_db.py)
-embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-
-# 👇 PROXY FIX: Manual client define kar rahe hain taaki 'proxies' error na aaye
-custom_client = httpx.Client()
-
-# LLM (Brain)
-llm = ChatGroq(
-    temperature=0.3,
-    model_name="llama-3.1-8b-instant",
-    groq_api_key=os.getenv("GROQ_API_KEY"),
-    http_client=httpx.Client()  # 👈 Explicitly pass a clean client
-)
-
-vectorstore = PineconeVectorStore(
-    index_name=os.getenv("PINECONE_INDEX_NAME"),
-    embedding=embeddings
-)
+client = InferenceClient(token=os.getenv("HF_TOKEN"))
+pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+index = pc.Index(os.getenv("PINECONE_INDEX_NAME"))
+llm = ChatGroq(groq_api_key=os.getenv(
+    "GROQ_API_KEY"), model_name="llama-3.3-70b-versatile")
 
 
-def get_chat_response(job_id: str, question: str):
-    print(f"🔍 Searching for Job ID: {job_id}")
+def get_chat_response(query, video_id):
+    try:
+        # 1. Embed Query via SDK
+        query_emb = client.feature_extraction(
+            query, model="sentence-transformers/all-MiniLM-L6-v2")
 
-    # Namespace zaroori hai taaki sirf usi video se answer mile
-    retriever = vectorstore.as_retriever(
-        search_kwargs={'k': 5, 'namespace': job_id}
-    )
+        # 2. Search Pinecone
+        search_res = index.query(vector=query_emb.tolist() if hasattr(query_emb, 'tolist') else query_emb,
+                                 top_k=3, include_metadata=True, filter={"source": video_id})
 
-    template = """SYSTEM: You are Veloce-AI. Answer based ONLY on the context below.
-    If context is empty, say "I don't have info on this part of the video."
-    
-    CONTEXT:
-    {context}
+        matches = search_res.get('matches', [])
+        context = " ".join([m.get('metadata', {}).get('text', '')
+                           for m in matches])
 
-    USER QUESTION: {question}
-    
-    ANSWER:"""
+        # 3. LLM Response
+        prompt = f"Using this context: {context}\n\nQuestion: {query}"
+        return llm.invoke(prompt).content
+    except Exception as e:
+        return f"Chat Error: {str(e)}"
 
-    prompt = ChatPromptTemplate.from_template(template)
+# Isse chat_engine.py ke end mein add kar de
 
-    # Chain setup
-    chain = (
-        {"context": retriever, "question": RunnablePassthrough()}
-        | prompt
-        | llm
-        | StrOutputParser()
-    )
 
-    return chain.invoke(question).strip()
+def get_video_summary(video_id):
+    """Generates a 3-point summary automatically after indexing"""
+    try:
+        # 1. Broad context ke liye hum khali query bhejte hain (Top 5 chunks)
+        # Summary ke liye humein query ki zarurat nahi, bas video_id ka context chahiye
+        search_res = index.query(
+            vector=[0] * 384,  # Dummy vector for broad search
+            top_k=5,
+            include_metadata=True,
+            filter={"source": video_id}
+        )
+
+        matches = search_res.get('matches', [])
+        context = " ".join([m.get('metadata', {}).get('text', '')
+                           for m in matches])
+
+        # 2. Specialized Summary Prompt
+        summary_prompt = (
+            f"Analyze the following video transcript context and provide exactly 3 concise, "
+            f"high-impact takeaways or a summary. Use bullet points.\n\nContext: {context}"
+        )
+
+        # 3. Use Llama 3.3 for the summary
+        response = llm.invoke(summary_prompt)
+        return response.content
+    except Exception as e:
+        print(f"⚠️ Summary Generation Failed: {e}")
+        return "Summary generation failed, but you can still chat with the video!"

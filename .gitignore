@@ -1,17 +1,15 @@
-# System & Environment
-venv/
-.env
+# Python
+backend/venv/
 __pycache__/
 *.pyc
 
-# Backend specific
-backend/model_cache/
-temp_audio/
-
-# Frontend (Double safety, waise frontend wala sambhal lega)
+# JavaScript / Next.js
 frontend/node_modules/
 frontend/.next/
 
-# OS junk
-.DS_Store
-Thumbs.db
+# Sensitive Data
+.env
+cookies.txt
+
+# Temp Files
+backend/temp_audio/
