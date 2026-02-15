@@ -1,8 +1,8 @@
 # ⚡ Veloce-AI: Intelligent Video RAG Engine
 
-<img width="1301" height="726" alt="Veloce-AI LandingPage" src="https://github.com/user-attachments/assets/677c99a5-e478-484a-a8a4-eecfe2742db3" />
-
 **Veloce-AI** is a high-performance Video Intelligence platform that allows users to chat with YouTube videos in real-time. By leveraging a state-of-the-art RAG (Retrieval-Augmented Generation) pipeline, it delivers automated summaries and precise context-aware answers.
+
+<img width="1301" height="726" alt="Veloce-AI LandingPage" src="https://github.com/user-attachments/assets/677c99a5-e478-484a-a8a4-eecfe2742db3" />
 
 ### 🚀 Demo: 
 
