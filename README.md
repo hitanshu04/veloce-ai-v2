@@ -4,7 +4,11 @@
 
 **Veloce-AI** is a high-performance Video Intelligence platform that allows users to chat with YouTube videos in real-time. By leveraging a state-of-the-art RAG (Retrieval-Augmented Generation) pipeline, it delivers automated summaries and precise context-aware answers.
 
-### 🚀 Live Demo: https://github.com/user-attachments/assets/0981b0bb-4546-47da-b3ce-2d2a3176a590
+### 🚀 Demo: 
+
+https://github.com/user-attachments/assets/33e1b8ee-4dcb-4d17-b918-f6575051fbc6
+
+
 ---
 ## 🚀 Key Features
 
